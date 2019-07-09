@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites testcount="1" failures="0" errors="1">
+    <testsuite name="script_runNanobeamCavity" tests="1">
+        <testcase name="/n/home08/eknall/Lumerical/AirholeCavity/AsymmetricCavity/Nanocavity optimization scripts/FDTD scripts/script_runNanobeamCavity.lsf" failures="0" errors="1">
+            <error result="error" message="in getdata, the d-card named monitors::time1 was not found.&#10;  This is likely because you are in Layout Mode and need to switch to Analysis Mode by running the simulation&#10;  or opening a simulation that contains data.&#10;  Also, try the command '?getdata;' to see the which global d-cards are available." buffer="/n/home08/eknall/Lumerical/AirholeCavity/AsymmetricCavity/Nanocavity optimization scripts/FDTD scripts/script_runNanobeamCavity.lsf" file="/n/home08/eknall/Lumerical/AirholeCavity/AsymmetricCavity/Nanocavity optimization scripts/FDTD scripts/script_runNanobeamCavity.lsf" line="6"/>
+        </testcase>
+    </testsuite>
+</testsuites>

@@ -1,0 +1,57 @@
+#Script for ploting field profiles from a 3D field monitor (with symmetries are unfolded)
+
+#Variables are assembled in the lumerical workspace and then saved as .mat files for
+#final manipulation in MATLAB
+
+clear;
+
+#Get spatial dimensions
+xv=getdata("monitors::field3D","x",2); #option 2 unfolds data when symmetries are used
+yv=getdata("monitors::field3D","y",2);
+zv=getdata("monitors::field3D","z",2);
+
+#Get field profiles
+Ex=getdata("monitors::field3D","Ex",2); 
+Ey=getdata("monitors::field3D","Ey",2);
+Ez=getdata("monitors::field3D","Ez",2);
+
+#Get the index map
+n_x=pinch(getdata("monitors::index3D","index_x",2));
+n_y=pinch(getdata("monitors::index3D","index_y",2));
+n_z=pinch(getdata("monitors::index3D","index_z",2));
+
+#Calculate the energy density
+#pinch(x, i, j) removes ith index but keeps jth value
+Eden = n_x^2*(pinch(Ex,4,1))^2 + n_y^2*(pinch(Ey,4,1))^2 + n_z^2*(pinch(Ez,4,1))^2;
+
+#Find the matrix index at (x,y,z) = (0,0,zmax)
+index_x = find(xv,0);
+index_y = find(yv,0);
+
+select("Structure");
+zmax = get("z");
+index_z = find(zv,zmax);
+
+#Plot yz cross-section (Ex,Ey,Ez) and Edensity mode profiles
+Ex_z = pinch(pinch(Ex,4,1),3,index_z);
+Ey_z = pinch(pinch(Ey,4,1),3,index_z);
+Ez_z = pinch(pinch(Ez,4,1),3,index_z);
+Eden_z = pinch(Eden,3,index_z);
+
+#Plot xy cross-section (Ex,Ey,Ez) and Edensity mode profiles
+Ex_x = pinch(pinch(Ex,4,1),1,index_x);
+Ey_x = pinch(pinch(Ey,4,1),1,index_x);
+Ez_x = pinch(pinch(Ez,4,1),1,index_x);
+Eden_x = pinch(Eden,1,index_x);
+
+#Plot xz cross-section (Ex,Ey,Ez) and Edensity mode profiles
+Ex_y = pinch(pinch(Ex,4,1),2,index_y);
+Ey_y = pinch(pinch(Ey,4,1),2,index_y);
+Ez_y = pinch(pinch(Ez,4,1),2,index_y);
+Eden_y = pinch(Eden,2,index_y);
+
+#Export variables as .mat files
+matlabsave("fieldprofiles",xv,yv,zv,Ex_x,Ey_x,Ez_x,Ex_y,Ey_y,Ez_y,Ex_z,Ey_z,Ez_z,Eden_x,Eden_y,Eden_z);
+
+##Export variables as .mat files
+#matlabsave("fieldprofiles",xv,yv,zv,Ex, Ey, Ez, n_x, n_y, n_z, index_x, index_y, index_z);

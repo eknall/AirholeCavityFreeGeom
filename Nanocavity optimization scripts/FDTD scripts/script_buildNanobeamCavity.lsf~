@@ -1,0 +1,162 @@
+############################### 
+# Author: M.J. Burek
+# Date last modified: 20150316
+
+# Objective:
+#   This code creates the basic structure for 
+#   a triangular cross section waveguide.
+
+# Elements include:
+#   Complete triangular structure 
+
+#clear all variables in the workspace
+clear;
+switchtolayout;
+
+###############################
+#Delete selected elements 
+###############################
+
+#Delete the Structure
+if (getnamednumber("Structure")==1) {
+    select("Structure");
+    delete;
+}
+
+#####################
+#Structure Parameters 
+#####################
+
+beamStruct = readdata('beamStruct.txt');
+nbeam = beamStruct(1);
+w = beamStruct(2);
+theta = beamStruct(3);
+len = beamStruct(4)+20e-6;
+asym = beamStruct(5);
+
+holeStruct = readdata('holeStruct.txt');
+x = size(holeStruct);
+hh = holeStruct(1:x(1),1);
+hw = holeStruct(1:x(1),2);
+xpos = holeStruct(1:x(1),3);
+ypos = holeStruct(1:x(1),4);
+
+#Beam height
+height = w/(2*tan(theta/(180/pi)));
+
+#Major radius
+rad1 = hw/2;
+#Minor radius 
+rad2 = hh/2;
+
+########################
+#Create the structure
+########################
+
+
+#Add a group
+addstructuregroup;
+set("name","Structure");
+#Set the group at roughly the nanobeam center
+set("x",0);
+set("y",0);
+set("z",height*0.5);
+
+#Rotate the nanobeam
+set("first axis","z");
+set("rotation 1",90);
+
+##### Add the waveguide
+addtriangle;
+addtogroup("Structure");
+
+#Set the name of the triangle
+set("name","beam");
+
+#Set location at the origin
+set("x",0);
+set("y",0);
+set("z",0);
+
+#Set the proper length
+#Find the length of the circle array and add 20 microns on either side
+set("z min",(-1*len/2));
+set("z max",(len/2));
+
+#rotate the triangle
+set("first axis","x");
+set("rotation 1",90);
+
+#set the vertices for the triangle
+xv=[-w/2,w/2,asym];
+yv=[0,0,-height];
+V=[xv;yv];
+set("vertices",V);
+
+#set the refractive index of the material (for diamond=2.4)
+set("index",nbeam);
+
+
+
+### Add air holes
+
+#Determine the size of radm (for index purposes)
+holes=size(hh);
+
+for (i=1:holes(1)) {
+
+# Add first circle and add it to the group structures
+addcircle; 
+addtogroup("Structure");
+
+# Set the name of the circle
+set("name","circle"+num2str(i));
+
+# Set the position of the circle
+set("x",ypos(i)); #90o rotation makes y->x
+set("z",0);
+
+#Set the spacing
+set("y",xpos(i));
+
+#Make an ellipse
+set("make ellipsoid",1);
+
+# Set the major radius
+set("radius",rad1(i));
+
+# Set the minor radius
+set("radius 2",rad2(i));
+
+# Create the cylinder 
+set("z min",-height);
+set("z max",0);
+set("z span",height);
+
+# Change the material
+set("material","etch");
+}
+
+
+#Add index3D monitor
+addindex;
+set("name","index3D");
+set("monitor type",4);  # 1 = 2D x-normal,  2 = 3D y-normal,  3 = 2D z-normal
+set("x",0);
+set("x span",len);
+set("y",0);
+set("y span", w);
+set("z",0);
+set("z span",height);
+
+redraw;
+#mvc added: save 3d index monitor for plotdefectcells
+prev = getresult("index3D", "index preview");
+index_x = prev.index_x;
+x = prev.x;
+y = prev.y;
+z = prev.z;
+matlabsave("index", index_x, x, y, z); #also index_y and index_z but they should be the same?
+
+
+save(currentfilename);

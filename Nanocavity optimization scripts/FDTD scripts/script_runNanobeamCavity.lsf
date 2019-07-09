@@ -1,0 +1,19 @@
+#run;
+save(currentfilename);
+?"In runNanobeamCavity.lsf";
+#indicate whether simulation ran to completion
+
+t = getdata("monitors::time1","t");
+dt = t(2) - t(1);
+
+siz = size(t);
+tend = t(siz(1));
+
+select("simulation::FDTD");
+tstop = get("simulation time");
+
+endpoint = abs(tend-tstop);
+realSol = 0;
+if (abs(tend-tstop)<10*dt) {realSol = 1;}
+
+matlabsave("realSol",realSol);

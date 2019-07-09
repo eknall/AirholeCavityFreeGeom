@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites testcount="1" failures="0" errors="2">
+    <testsuite name="script_buildNanobeamCavity" tests="1">
+        <testcase name="/n/home08/eknall/Lumerical/AirholeCavity/AsymmetricCavity/Nanocavity optimization scripts/FDTD scripts/script_buildNanobeamCavity.lsf" failures="0" errors="2">
+            <error result="error" message="th is not a valid function or variable name" buffer="/n/home08/eknall/Lumerical/AirholeCavity/AsymmetricCavity/Nanocavity optimization scripts/FDTD scripts/script_buildNanobeamCavity.lsf" file="/n/home08/eknall/Lumerical/AirholeCavity/AsymmetricCavity/Nanocavity optimization scripts/FDTD scripts/script_buildNanobeamCavity.lsf" line="116"/>
+            <error result="error" message="argument list for set command is incorrect" buffer="/n/home08/eknall/Lumerical/AirholeCavity/AsymmetricCavity/Nanocavity optimization scripts/FDTD scripts/script_buildNanobeamCavity.lsf" file="/n/home08/eknall/Lumerical/AirholeCavity/AsymmetricCavity/Nanocavity optimization scripts/FDTD scripts/script_buildNanobeamCavity.lsf" line="116"/>
+        </testcase>
+    </testsuite>
+</testsuites>

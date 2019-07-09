@@ -1,0 +1,184 @@
+clear;
+fmin=300e12;	
+fmax=500e12;
+
+#set the time apodization settings as a fraction of total simulation time
+fractional_time_width = 1/12;
+fractional_time_center = 3/4;
+
+
+ # get center frequency of resonance
+    t = getdata("monitors::time1","t");
+    f = linspace(fmin,fmax,100000);
+    apodize = exp(-0.5*(t-max(t)*fractional_time_center)^2/(fractional_time_width*max(t))^2);    
+    fs=matrix(length(f));
+    
+    signal = pinch(getdata("monitors::time1","Ex"))*apodize;
+    fs = fs+abs(czt(signal,t,2*pi*f))^2;
+    signal = pinch(getdata("monitors::time1","Ey"))*apodize;
+    fs = fs+abs(czt(signal,t,2*pi*f))^2;
+    signal = pinch(getdata("monitors::time1","Ez"))*apodize;
+    fs = fs+abs(czt(signal,t,2*pi*f))^2;
+    signal = pinch(getdata("monitors::time2","Ex"))*apodize;
+    fs = fs+abs(czt(signal,t,2*pi*f))^2;
+    signal = pinch(getdata("monitors::time2","Ey"))*apodize;
+    fs = fs+abs(czt(signal,t,2*pi*f))^2;
+    signal = pinch(getdata("monitors::time2","Ez"))*apodize;
+    fs = fs+abs(czt(signal,t,2*pi*f))^2;
+    signal = pinch(getdata("monitors::time3","Ex"))*apodize;
+    fs = fs+abs(czt(signal,t,2*pi*f))^2;
+    signal = pinch(getdata("monitors::time3","Ey"))*apodize;
+    fs = fs+abs(czt(signal,t,2*pi*f))^2;	
+    signal = pinch(getdata("monitors::time3","Ez"))*apodize;
+    fs = fs+abs(czt(signal,t,2*pi*f))^2;  
+
+    for (j=1:length(f)) {
+        if (fs(j)==max(fs)) {fc = f(j);}
+    }
+
+   # find slope of time decay using Ey
+    lambda = c/fc;
+    ?"w = " + num2str(round(fc*1e-12)) + " THz";
+    ?"lambda = " + num2str(round(lambda*1e9)) + " nm";
+    t = pinch(getdata("monitors::time1","t"));
+    ey = pinch(getdata("monitors::time1","Ey"));
+    totalpoints = size(ey);     
+    dt = t(2) - t(1);
+    T = 1/fc; # optical period
+    points = round(T/dt);    #points in an optical cycle
+    ey_start = matrix(points,1);
+    ey_end = matrix(points,1);
+   
+#find q
+ avenum=50;
+ q=matrix(avenum);
+ for (j=1:avenum) {     
+    zerotime = 400e-15+j*T;
+    zeropoint=round(zerotime/dt);
+    
+    for (k=1:points) {
+        ey_start(k) = ey(k+zeropoint);
+        ey_end(k) = ey(totalpoints(1) - points + k);
+    }    
+
+    for (l=1:points) {
+        if (ey_start(l)==max(ey_start)) {ts = t(l+zeropoint);}
+        if (ey_end(l)==max(ey_end)) {te = t(totalpoints(1) - points + l);}
+    }
+   
+    slope = (log10(max(ey_start)) - log10(max(ey_end))) / (ts - te);
+    q(j)= -log10(exp(1))*fc*2*pi/2/slope;
+  }
+    Qtime=real(sum(q)/avenum);
+    ?"from time domain: Q = " + num2str(Qtime);
+
+
+#calculate mode volume & partial Q
+#set up volume time monitors side wall monitors
+T = 1/fc;
+tx=getdata("monitors::time_x2","t");
+dt=tx(2) - tx(1);
+
+y_wgIn=pinch(getdata("monitors::time_x2","y",1));   #2 unfold data 
+z_wgIn=getdata("monitors::time_x2","z",1);
+
+y_wgOut=pinch(getdata("monitors::time_x1","y",1));   #2 unfold data 
+z_wgOut=getdata("monitors::time_x1","z",1);
+
+x_sider=getdata("monitors::time_y2","x",1);
+z_sider=getdata("monitors::time_y2","z",1);
+
+x_sidel=getdata("monitors::time_y1","x",1);
+z_sidel=getdata("monitors::time_y1","z",1);
+
+x_bot=getdata("monitors::time_z1","x",1);
+y_bot=getdata("monitors::time_z1","y",1);
+
+x_top=getdata("monitors::time_z2","x",1);
+y_top=getdata("monitors::time_z2","y",1);
+
+PxIn=pinch(getdata("monitors::time_x2","Px",1));
+PxOut=pinch(getdata("monitors::time_x1","Px",1));  
+Py2=pinch(getdata("monitors::time_y2","Py",1));
+Py1=pinch(getdata("monitors::time_y1","Py",1));
+Pz1=pinch(getdata("monitors::time_z1","Pz",1));
+Pz2=pinch(getdata("monitors::time_z2","Pz",1));
+
+# integrating the spatial profile
+xwallIn_int=integrate(PxIn,1:2,y_wgIn,z_wgIn);
+xwallOut_int=integrate(PxOut,1:2,y_wgOut,z_wgOut); 
+ywall1_int=integrate(Py1,1:2,x_sidel,z_sidel);
+ywall2_int=integrate(Py2,1:2,x_sider,z_sider);
+zwall1_int=integrate(Pz1,1:2,x_bot,y_bot);
+zwall2_int=integrate(Pz2,1:2,x_top,y_top);
+
+# averaging time domain
+PxIn_ave=1/2*(max(xwallIn_int)+min(xwallIn_int));
+PxOut_ave=-1/2*(max(xwallOut_int)+min(xwallOut_int));
+Py1_ave=-1/2*(max(ywall1_int)+min(ywall1_int)); # -1 factor for Py normalization
+Py2_ave=1/2*(max(ywall2_int)+min(ywall2_int));
+Pz1_ave=-1/2*(max(zwall1_int)+min(zwall1_int)); # -1 factor for Pz normalization
+Pz2_ave=1/2*(max(zwall2_int)+min(zwall2_int));
+
+Ex=getdata("monitors::field3D","Ex",1);
+Ey=getdata("monitors::field3D","Ey",1);
+Ez=getdata("monitors::field3D","Ez",1);
+
+xv=getdata("monitors::field3D","x",1);
+yv=getdata("monitors::field3D","y",1);
+zv=getdata("monitors::field3D","z",1);
+tv=getdata("monitors::field3D","t",1);
+dtv=tv(2)-tv(1);
+
+# energy cycles at twice mode frequency
+pointsV=2*round(T/(2*dtv))+1;
+
+index_x=pinch(getdata("monitors::index3D","index_x",1));
+index_y=pinch(getdata("monitors::index3D","index_y",1));
+index_z=pinch(getdata("monitors::index3D","index_z",1));
+
+Edenmax=matrix(pointsV,1);  #maximum at each time
+Energy=matrix(pointsV,1);   #energy at each time
+
+for(m=1:pointsV) {
+   Edensity = index_x^2*(pinch(Ex,4,m))^2 + index_y^2*(pinch(Ey,4,m))^2 + index_z^2*(pinch(Ez,4,m))^2;
+   Energy(m) = integrate(Edensity, 1:3, xv, yv, zv);
+   Edenmax(m) = max(Edensity);  
+}
+
+#mode volume 
+Vn=(lambda/max(index_x))^3;
+
+Etotal=eps0*Energy;  
+Etotal_ave=sum(Etotal)/pointsV;
+Enorm=eps0*Edenmax;
+Enorm_ave = sum(Enorm)/pointsV;
+Vmode=real(Etotal_ave/Enorm_ave/Vn);
+?"Vmode = " + num2str(Vmode); 
+
+
+#Qs
+Qx1=2*pi*fc*Etotal_ave/PxIn_ave;
+Qx2=2*pi*fc*Etotal_ave/PxOut_ave;
+Qy1=2*pi*fc*Etotal_ave/Py1_ave;
+Qy2=2*pi*fc*Etotal_ave/Py2_ave;
+Qz1=2*pi*fc*Etotal_ave/Pz1_ave;
+Qz2=2*pi*fc*Etotal_ave/Pz2_ave;
+
+Qt = real(1/(1/Qx1 +1/Qx2 + 1/Qy1 +1/Qy2 + 1/Qz1 + 1/Qz2));
+Qsc = real(1/(1/Qy1 +1/Qy2+ 1/Qz1 + 1/Qz2));
+Qwvg = real(1/(1/Qx1 +1/Qx2));
+Trans = real((Qt^2/Qwvg^2));
+?"Qx1 = " + num2str(round(real(Qx1))); 
+?"Qx2 = " + num2str(round(real(Qx2))); 
+?"Qy1 = " + num2str(real(Qy1));
+?"Qy2 = " + num2str(real(Qy2));
+?"Qz1 = " + num2str(real(Qz1));
+?"Qz2 = " + num2str(real(Qz2));
+?"Qtotal = " + num2str(Qt);
+?"Qsc = " + num2str(Qsc);
+?"Qwg = " + num2str(Qwvg);
+
+?"Trans = " + num2str(round(100*Trans)) + "%";
+#Export variables as .mat files
+matlabsave("QVanalysis",lambda,Vmode,Qtime,Qt,Qsc,Qwvg,Trans,Qx1,Qx2,Qy1,Qy2,Qz1,Qz2);
